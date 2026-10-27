@@ -25,6 +25,7 @@ SHELL_TEST_TARGETS := $(addprefix test-shell-,$(SHELL_TESTS))
 .PHONY: help doctor test guest guest-package refresh runtime firmware app kit build run run-ephemeral reset version-preflight package package-preflight release release-preflight publish clean clean-all clean-guest
 .PHONY: test-all test-contracts test-guest test-swift test-shell $(SHELL_TEST_TARGETS)
 .PHONY: test-upstream test-guest-install test-kit e2e
+.PHONY: test-ios ios ios-app ios-runtime ios-zstd ios-firmware ios-manifest ios-simulator-qemu
 
 help:
 	@printf '%s\n' \
@@ -37,6 +38,10 @@ help:
 	  '  make test-guest-install  Install, upgrade and remove the guest package (Docker, network)' \
 	  '  make test-kit       Check the kit make kit built (KIT_DIR=DIR checks another)' \
 	  '  make e2e            Boot a disposable VM in the app and check it end to end' \
+	  '  make test-ios       Check the iOS shell contracts (no device, no QEMU build)' \
+	  '  make ios-app        Compile the unsigned iOS app' \
+	  '  make ios-simulator-qemu  Stage UTM'"'"'s simulator QEMU library' \
+	  '  make ios            Build QEMU, stage firmware, and compile the iOS app' \
 	  '  make build          Build only changed guest, runtime, and app inputs' \
 	  '  make build FORCE=1  Rebuild every component (the guest takes the newest Omarchy edge)' \
 	  '  make refresh        Rebuild the factory from the latest Omarchy edge, then build' \
@@ -79,7 +84,7 @@ test:
 
 # Start Swift early; shell integration suites consume its helper binary. Each
 # suite owns its temporary state, but SwiftPM has a single build directory.
-test-all: test-swift test-contracts test-guest test-shell
+test-all: test-swift test-contracts test-guest test-shell test-ios
 
 test-contracts:
 	@PYTHONDONTWRITEBYTECODE=1 python3 "$(ROOT)/macos/Tests/test-hda-recovery.py"
@@ -149,6 +154,47 @@ test-guest-install:
 test-swift:
 	@mkdir -p $(ROOT)/macos/.build/module-cache/swift $(ROOT)/macos/.build/module-cache/clang
 	@cd $(ROOT)/macos && SWIFT_MODULECACHE_PATH=$(ROOT)/macos/.build/module-cache/swift CLANG_MODULE_CACHE_PATH=$(ROOT)/macos/.build/module-cache/clang swift test --disable-sandbox
+
+test-ios:
+	@mkdir -p $(ROOT)/ios/.build/module-cache/swift $(ROOT)/ios/.build/module-cache/clang
+	@cd $(ROOT)/ios && SWIFT_MODULECACHE_PATH=$(ROOT)/ios/.build/module-cache/swift CLANG_MODULE_CACHE_PATH=$(ROOT)/ios/.build/module-cache/clang swift test --disable-sandbox
+
+ios-zstd:
+	@"$(ROOT)/ios/runtime/build-zstd.sh"
+
+ios-firmware: firmware
+	@mkdir -p "$(ROOT)/ios/Resources/firmware"
+	@cp "$(ROOT)/macos/.build/firmware/edk2-aarch64-code.fd" "$(ROOT)/ios/Resources/firmware/edk2-aarch64-code.fd"
+
+ios-runtime:
+	@"$(ROOT)/ios/runtime/build-qemu.sh"
+
+ios-simulator-qemu:
+	@bash "$(ROOT)/ios/runtime/stage-simulator-qemu.sh"
+
+ios-manifest:
+	@"$(ROOT)/ios/refresh-manifest.sh" "$(DMG)"
+
+ios-app:
+	@"$(ROOT)/ios/runtime/write-runtime-config.sh"
+	@command -v xcodegen >/dev/null || { echo 'error: xcodegen is required' >&2; exit 1; }
+	@xcodegen generate --spec "$(ROOT)/ios/project.yml" --project "$(ROOT)/ios"
+	@set -euo pipefail; \
+	  if ! xcodebuild -version >/dev/null 2>&1; then \
+	    for app in /Applications/Xcode.app /Applications/Xcode-beta.app; do \
+	      if [[ -x "$$app/Contents/Developer/usr/bin/xcodebuild" ]]; then \
+	        export DEVELOPER_DIR="$$app/Contents/Developer"; \
+	        break; \
+	      fi; \
+	    done; \
+	  fi; \
+	  xcodebuild -version >/dev/null 2>&1 || { echo 'error: Xcode is required' >&2; exit 1; }; \
+	  xcodebuild -project "$(ROOT)/ios/TryOmarchy.xcodeproj" -scheme TryOmarchy \
+	    -destination 'generic/platform=iOS' -configuration Debug \
+	    -derivedDataPath "$(ROOT)/ios/.build/derived" \
+	    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+ios: ios-runtime ios-firmware ios-app
 
 test-shell: $(SHELL_TEST_TARGETS)
 
@@ -253,7 +299,12 @@ clean:
 	  "$(ROOT)/.build" \
 	  "$(ROOT)/guest/.work" \
 	  "$(ROOT)/macos/.build" \
-	  "$(ROOT)/macos/.swiftpm"
+	  "$(ROOT)/macos/.swiftpm" \
+	  "$(ROOT)/ios/.build" \
+	  "$(ROOT)/ios/.swiftpm" \
+	  "$(ROOT)/ios/runtime/out" \
+	  "$(ROOT)/ios/TryOmarchy.xcodeproj" \
+	  "$(ROOT)/ios/Config/Runtime.local.xcconfig"
 	@find "$(ROOT)" -type d \( -name __pycache__ -o -name .pytest_cache \) \
 	  -prune -exec rm -rf -- {} +
 	@set -e; if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then \

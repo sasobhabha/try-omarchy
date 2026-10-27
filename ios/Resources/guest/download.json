@@ -1,0 +1,26 @@
+{
+  "format": 1,
+  "kind": "try-omarchy-factory-download",
+  "identity": "319f046156dfae25e39e6386e03683fa3bf5b51c0ba92fb3ace4243f7b66d14d",
+  "image": {
+    "bytes": 3166644370,
+    "sha256": "1dc802ab1e8305b30d22eafe17f89bd8dd6a086b48e7dad12d14d05d347f6f03"
+  },
+  "parts": [
+    {
+      "url": "https://github.com/omacom/try-omarchy/releases/download/v1.2.0/omarchy-aarch64-edge.img.zst.001",
+      "bytes": 1073741824,
+      "sha256": "ef8025b673d72847c5cdbf758f63e937bceee1b39e8890f7570ec4f4b68780dc"
+    },
+    {
+      "url": "https://github.com/omacom/try-omarchy/releases/download/v1.2.0/omarchy-aarch64-edge.img.zst.002",
+      "bytes": 1073741824,
+      "sha256": "972e877799256915d1b54ab99788b367511f9e7347feae6b6080f78b57ee641b"
+    },
+    {
+      "url": "https://github.com/omacom/try-omarchy/releases/download/v1.2.0/omarchy-aarch64-edge.img.zst.003",
+      "bytes": 1019160722,
+      "sha256": "3a1a10403039dd9720e676abc950dc6dae3a4f44acbaf17402cc5d81fd736758"
+    }
+  ]
+}

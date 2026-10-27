@@ -22,3 +22,10 @@ __pycache__/
 /.build/
 /guest/.work/
 /macos/.swiftpm/
+/ios/.build/
+/ios/.swiftpm/
+/ios/runtime/out/
+/ios/Config/Runtime.local.xcconfig
+/ios/TryOmarchy.xcodeproj/
+/ios/Resources/firmware/*.fd
+xcuserdata/

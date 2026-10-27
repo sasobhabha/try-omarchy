@@ -37,6 +37,15 @@ jobs:
         if: matrix.target == 'test'
         run: make test
 
+      # The iOS shell without the QEMU cross-compile. That compile is hours,
+      # and the device boot cannot run here. macos-15 is enough to prove the
+      # unsigned project still links.
+      - name: Compile the unsigned iOS app
+        if: matrix.target == 'test' && matrix.os == 'macos-15'
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          make ios-app
+
       - name: Install runtime build tool
         if: matrix.target == 'runtime'
         run: command -v pkg-config || brew install pkg-config

@@ -8,3 +8,4 @@ These guides cover what's specific to running Omarchy inside Try Omarchy. For Om
 - [Touch ID](touch-id.md): `sudo` and 1Password
 - [Updates and your data](updates-and-data.md): how updates work, where the VM lives, resources, starting over
 - [Troubleshooting](troubleshooting.md): what to check, and where to report a problem
+- [iPhone and iPad](ios.md): download and boot Omarchy on iOS

@@ -25,6 +25,12 @@ The guest is an ordinary Omarchy system. It updates itself with
 `omarchy update`, including its kernel, and can switch channels with
 `omarchy-channel-set`. Try Omarchy changes no file Omarchy owns.
 
+The iOS app is a second shell for the same factory disk. A sideloaded app
+cannot use Hypervisor.framework, so the guest CPU runs under QEMU's TCG
+translator in the app process. Xcode's debugger, or StikDebug, attaches so that
+translator can be executable. The display is the virtio-gpu text console over VNC.
+See [iOS](ios.md).
+
 ## What happens when the app opens
 
 The Swift launcher presents a start menu on every app open. It reports optional
